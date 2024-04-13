@@ -1,0 +1,66 @@
+{  
+	"builders": [
+    {
+      "type": "vsphere-iso",
+      "vcenter_server": "{{user `vsphere-server`}}",
+      "username": "{{user `vsphere-user`}}",
+      "password": "{{user `vsphere-password`}}",
+      "insecure_connection": "true",
+      "datacenter": "{{user `vsphere-datacenter`}}",
+      "datastore": "{{user `vsphere-datastore`}}",
+      "convert_to_template": "true",
+      "vm_name": "{{user `vm-name`}}",
+      "cluster": "{{user `vsphere-cluster`}}",
+      "guest_os_type": "ubuntu64Guest",
+      "CPUs": "{{user `vm-cpu-num`}}",
+      "RAM": "{{user `vm-mem-size`}}",
+      "RAM_reserve_all": true,
+      "firmware": "bios",
+  
+      "storage": [
+        {
+          "disk_size": "{{user `os-disk-size`}}",
+          "disk_thin_provisioned": "{{user `disk-thin-provision`}}"
+        }
+      ],
+      "disk_controller_type": "lsilogic-sas",
+          
+      "network_adapters": [
+        {
+          "network": "{{user `vsphere-network`}}",
+          "network_card": "vmxnet3"
+        }
+      ],
+      "boot_wait": "15s",
+      "boot_command": [
+        "c",
+        "linux /casper/vmlinuz \"ds=nocloud-net;seedfrom=http://{{ .HTTPIP }}:{{ .HTTPPort }}/\" autoinstall quiet --- ",
+        "<enter><wait>",
+        "initrd /casper/initrd<enter><wait>",
+        "boot<enter>"
+    ],
+      "shutdown_command": "echo '{{ user `ssh_password` }}'| sudo -S shutdown -P now",
+
+        "ssh_username": "administrator",
+        "ssh_password": "test..123",
+        "ssh_timeout": "35m",
+        "ssh_port": 22,
+        "http_directory": "http",
+        "iso_paths": ["{{user `os_iso_path`}}"]
+      }
+    ],
+    "provisioners": [
+        {
+          "execute_command": "echo '{{ user `ssh_password` }}' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+          "scripts": [
+            "script/update.sh",
+            "script/vmware.sh"
+          ],
+          "type": "shell"
+        },
+        {
+          "type": "ansible",
+          "playbook_file": "./playbook.yml"
+        }
+      ]
+    }
